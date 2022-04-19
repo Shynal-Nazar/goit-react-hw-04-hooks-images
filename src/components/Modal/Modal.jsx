@@ -29,6 +29,6 @@ export default Modal;
 
 Modal.propTypes = {
   largeImageURL: PropTypes.string,
-  tags: PropTypes.string,
+  alt: PropTypes.string,
   onClick: PropTypes.func,
 };
