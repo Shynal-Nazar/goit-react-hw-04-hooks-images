@@ -1,31 +1,30 @@
 import PropTypes from 'prop-types';
-import React, { Component } from 'react';
+import { useEffect } from 'react';
 import { Overlay, ModalForo } from './Modal.styled';
 
-class Modal extends Component {
-  componentDidMount() {
-    window.addEventListener('keydown', this.cleanEventListener);
-  }
-  componentWillUnmount() {
-    window.removeEventListener('keydown', this.cleanEventListener);
-  }
+const Modal = ({ onClick, largeImageURL, alt }) => {
+  useEffect(() => {
+    window.addEventListener('keydown', cleanEventListener);
+    return () => {
+      window.removeEventListener('keydown', cleanEventListener);
+    };
+  });
 
-  cleanEventListener = e => {
+  const cleanEventListener = e => {
     if (e.code === 'Escape') {
-      this.props.onClick();
+      onClick();
     }
   };
-  render() {
-    const { onClick, largeImageURL, alt } = this.props;
-    return (
-      <Overlay onClick={onClick}>
-        <ModalForo>
-          <img src={largeImageURL} alt={alt} />
-        </ModalForo>
-      </Overlay>
-    );
-  }
-}
+
+  return (
+    <Overlay onClick={onClick}>
+      <ModalForo>
+        <img src={largeImageURL} alt={alt} />
+      </ModalForo>
+    </Overlay>
+  );
+};
+
 export default Modal;
 
 Modal.propTypes = {

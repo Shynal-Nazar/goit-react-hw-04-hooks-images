@@ -1,4 +1,5 @@
-import React, { Component } from 'react';
+/* eslint-disable react-hooks/exhaustive-deps */
+import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -12,30 +13,36 @@ import Loader from 'components/Loader/Loader';
 import Modal from 'components/Modal/Modal';
 import Button from 'components/Button/Button';
 
-export class App extends Component {
-  state = {
-    searchbar: '',
-    images: [],
-    status: 'idle',
-  };
+export const App = () => {
+  const [searchbar, setSearchbar] = useState('');
+  const [error, setError] = useState(null);
+  const [images, setImages] = useState([]);
+  const [status, setStatus] = useState('idle');
+  const [page, setPage] = useState(1);
+  const [fetchLength, setFetchLength] = useState('');
+  const [largeImageURL, setLargeImageURL] = useState('');
+  const [alt, setAlt] = useState('');
 
-  componentDidUpdate(_, PrevState) {
-    const prevSearch = PrevState.searchbar;
-    const nextSearch = this.state.searchbar;
-    const page = 1;
-    if (prevSearch !== nextSearch) {
-      this.setState({ status: 'pending', page: 1 });
-      this.fatchImages(nextSearch, page, this.initImages, false);
+  useEffect(() => {
+    if (searchbar) {
+      setStatus('pending');
+      setPage(1);
+      fatchImages(searchbar, page, initImages, false);
     }
-  }
+  }, [searchbar]);
 
-  loadMore = () => {
-    const page = this.state.page + 1;
-    this.fatchImages(this.state.searchbar, page, this.addImages, true);
+  useEffect(() => {
+    fatchImages(searchbar, page, addImages, true);
+  }, [page]);
+
+  const loadMore = () => {
+    setPage(page + 1);
   };
 
-  fatchImages = (nextSearch, page, callBackFunc, toscrol) => {
-    Api.fatchImage(nextSearch, page)
+  const fatchImages = (nextSearch, pageNumber, callBackFunc, toscrol) => {
+    if (!nextSearch) return;
+
+    Api.fatchImage(nextSearch, pageNumber)
       .then(images => {
         callBackFunc(images, nextSearch);
       })
@@ -47,50 +54,49 @@ export class App extends Component {
           });
         }
       })
-      .catch(error => this.setState({ error, status: 'rejected' }));
+      .catch(error => {
+        setError(error);
+        setStatus('rejected');
+      });
   };
 
-  initImages = (images, nextSearch) => {
+  const initImages = (images, nextSearch) => {
     if (images.total === 0) {
       toast.error('No any picture');
-      this.setState({ error: 'No any picture', status: 'rejected' });
+      const newError = 'No any picture';
+      setError(newError);
+      setStatus('rejected');
     } else {
-      this.setState({
-        images: images.hits,
-        fetchLength: images.total,
-        status: 'resolved',
-        page: 1,
-        searchbar: nextSearch,
-      });
+      setImages(images.hits);
+      setStatus('resolved');
+      setPage(1);
+      setSearchbar(nextSearch);
+      setFetchLength(images.total);
     }
   };
 
-  addImages = images => {
-    this.setState(prevState => ({
-      images: [...prevState.images, ...images.hits],
-      page: prevState.page + 1,
-    }));
+  const addImages = images => {
+    setImages(prevState => [...prevState, ...images.hits]);
   };
 
-  modalOpen = (moduleUrl, moduleAlt) => {
-    this.setState({
-      largeImageURL: moduleUrl,
-      alt: moduleAlt,
-    });
+  const modalOpen = (moduleUrl, moduleAlt) => {
+    setLargeImageURL(moduleUrl);
+    setAlt(moduleAlt);
   };
 
-  modalClose = () => {
-    this.setState({ largeImageURL: '', alt: '' });
+  const modalClose = () => {
+    setLargeImageURL('');
+    setAlt('');
   };
 
-  onFormSubmit = searchName => {
+  const onFormSubmit = searchName => {
     if (searchName) {
-      this.setState({ searchbar: searchName });
+      setSearchbar(searchName);
     }
     return;
   };
 
-  getImegesGallaryChildren = (status, images) => {
+  const getImegesGallaryChildren = (status, images) => {
     if (status === 'idle') {
       return <p>Enter the name of the picture</p>;
     }
@@ -100,21 +106,19 @@ export class App extends Component {
     }
 
     if (status === 'rejected') {
-      return <p>{this.state.error}</p>;
+      return <p>{error}</p>;
     }
 
     if (status === 'resolved') {
       return (
         <>
-          <ImageGallery images={images} modalOpen={this.modalOpen} />
-          {this.state.images.length !== this.state.fetchLength && (
-            <Button onClick={this.loadMore} />
-          )}
-          {this.state.largeImageURL && (
+          <ImageGallery images={images} modalOpen={modalOpen} />
+          {images.length !== fetchLength && <Button onClick={loadMore} />}
+          {largeImageURL && (
             <Modal
-              largeImageURL={this.state.largeImageURL}
-              alt={this.state.alt}
-              onClick={this.modalClose}
+              largeImageURL={largeImageURL}
+              alt={alt}
+              onClick={modalClose}
             />
           )}
         </>
@@ -122,14 +126,11 @@ export class App extends Component {
     }
   };
 
-  render() {
-    const { images, status } = this.state;
-    return (
-      <Container>
-        <Searchbar onSubmit={this.onFormSubmit} />
-        <ToastContainer autoClose={3000} />
-        {this.getImegesGallaryChildren(status, images)}
-      </Container>
-    );
-  }
-}
+  return (
+    <Container>
+      <Searchbar onSubmit={onFormSubmit} />
+      <ToastContainer autoClose={3000} />
+      {getImegesGallaryChildren(status, images)}
+    </Container>
+  );
+};
